@@ -47,7 +47,8 @@ def _jsonable(x):
 
 
 def save_run(d: Path, config: dict, metrics: dict) -> None:
+    commit = git_commit()  # before writing: rewriting tracked results would mark it dirty
     with open(d / "config.yaml", "w") as f:
-        yaml.safe_dump(config | {"git_commit": git_commit()}, f, sort_keys=False)
+        yaml.safe_dump(config | {"git_commit": commit}, f, sort_keys=False)
     with open(d / "metrics.json", "w") as f:
         json.dump(_jsonable(metrics), f, indent=2)
