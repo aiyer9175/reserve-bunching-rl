@@ -56,7 +56,7 @@ class _ResultView:
 
 
 def bid_metrics(sim: dict, reserves: ReserveSchedule, rng, n_boot=1000, n_match=None,
-                columns=None) -> dict:
+                columns=None, n_sub=200) -> dict:
     """Bunching, atom, kappa and tail metrics on pooled bids (or a subset of bidder columns)."""
     bids = sim["bids"] if columns is None else sim["bids"][:, columns]
     N = bids.shape[1]
@@ -70,13 +70,14 @@ def bid_metrics(sim: dict, reserves: ReserveSchedule, rng, n_boot=1000, n_match=
         atom_exact=metrics.atom_share(b, r, rh, metrics.EXACT_TOL),
         atom_offset=metrics.atom_offset(b, r, rh),
         kappa=metrics.kappa_fit(b, r, rh, n_boot=n_boot, rng=rng),
-        tail_ks=metrics.tail_ks(b, r, rh, rl, rng=rng, n_match=n_match),
+        tail_ks=metrics.tail_ks(b, r, rh, rl, rng=rng, n_match=n_match, n_sub=n_sub),
     )
 
 
 def evaluate_population(population, env: AuctionEnv, ref_fns: dict, *, n_auctions=1_000_000,
                         seed=100_000, mode="deterministic", eps_focal=None, eps_opponents=None,
-                        n_match=None, eps_draws=200_000) -> dict:
+                        n_match=None, eps_draws=200_000, bid_columns=None, n_boot=1000,
+                        n_sub=200, eval_reserves: ReserveSchedule | None = None):
     """Full SPEC Section 8 battery for one population.
 
     Bid metrics use a balanced (50/50) evaluation; economic outcomes and
@@ -85,9 +86,12 @@ def evaluate_population(population, env: AuctionEnv, ref_fns: dict, *, n_auction
     eps_focal / eps_opponents: bidders for the exploitability calculation (optional).
     """
     rng = np.random.default_rng(seed + 1)
+    if eval_reserves is not None:
+        env = AuctionEnv(env.n_bidders, env.value_dist, eval_reserves, env.mechanism)
     balanced = AuctionEnv(env.n_bidders, env.value_dist, env.reserves.with_p_high(0.5), env.mechanism)
     sim_bal = simulate(population, balanced, n_auctions, seed, mode)
-    out = dict(mode=mode, n_auctions=n_auctions, bids=bid_metrics(sim_bal, env.reserves, rng, n_match=n_match))
+    out = dict(mode=mode, n_auctions=n_auctions, bids=bid_metrics(
+        sim_bal, env.reserves, rng, n_boot=n_boot, n_match=n_match, columns=bid_columns, n_sub=n_sub))
 
     sim_mix = sim_bal if env.reserves.p_high == 0.5 else simulate(population, env, n_auctions, seed + 7, mode)
     out["economics"] = metrics.economic_outcomes(

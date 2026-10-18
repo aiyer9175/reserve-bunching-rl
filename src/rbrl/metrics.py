@@ -59,6 +59,15 @@ def atom_offset(bids, r, r_high, width=0.01):
     return float(np.median(near - r_high)) if near.size else np.nan
 
 
+def modal_bid(bid_fn, r, v_lo, v_hi, step=0.001):
+    """Most common deterministic bid for v in [v_lo, v_hi] at reserve r (H8), and its share."""
+    v = np.arange(v_lo, v_hi + step / 2, step)
+    b = np.round(bid_fn(v, np.full_like(v, r)), 6)
+    vals, counts = np.unique(b[~np.isnan(b)], return_counts=True)
+    i = counts.argmax()
+    return dict(modal_bid=float(vals[i]), share=float(counts[i] / counts.sum()))
+
+
 def kappa_fit(bids, r, r_high, deltas=DELTAS, n_boot=1000, rng=None):
     """Slope of log P_high(delta) on log delta, with a multinomial bootstrap 95% CI.
 

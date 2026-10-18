@@ -1,0 +1,10 @@
+# M2 sanity check: one PPO learner best-responding to three fixed A1 opponents.
+# H8: the best response to heuristic opponents bids just above r_high.
+run_id: m2_br_a1_beta
+n_bidders: 4
+value_dist: {kind: uniform}
+reserves: {r_low: 0.10, r_high: 0.50, p_high: 0.5, mode: mixed}
+population: [learner, A1, A1, A1]
+learner: {kind: A3, obs: full, action: beta, mask_above_value: false, wrapper: none, init: truthful}
+ppo: {updates: 2000}
+eval: {early_stop: false}

@@ -1,0 +1,10 @@
+# M2 sanity check: one PPO learner best-responding to three fixed A0 opponents.
+# H1: the best response to equilibrium opponents is b*.
+run_id: m2_br_a0_disc
+n_bidders: 4
+value_dist: {kind: uniform}
+reserves: {r_low: 0.10, r_high: 0.50, p_high: 0.5, mode: mixed}
+population: [learner, A0, A0, A0]
+learner: {kind: A3-disc, obs: full, action: categorical, mask_above_value: false, wrapper: none, init: truthful}
+ppo: {updates: 2000}
+eval: {early_stop: true}
