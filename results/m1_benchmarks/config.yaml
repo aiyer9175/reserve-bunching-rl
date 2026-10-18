@@ -11,4 +11,4 @@ eval_seed: 12345
 ks_match_n: 65000
 eps_draws: 200000
 save_bids: true
-git_commit: 8e8d319ab936d861f5a3cb16b1d45d2654332118-dirty
+git_commit: c743be6b01d05fb16912fdcb53ddaff4d5ae79cd
