@@ -13,6 +13,10 @@ Suggested repo name: `reserve-bunching-rl`
 3. **Exploitability uses the deterministic policy.** With a random policy, exploration noise alone can keep ε above 1e-3, especially with fixed entropy (F7). The convergence rule and H1 now use ε of the deterministic profile. Stochastic ε is reported only as a diagnostic (Sections 7.6, 8.6, 10).
 4. **Deterministic mode has one definition: the Beta mean.** The mean and the mode give different bid functions. The mean is used for all classification. The mode is reported as a secondary diagnostic only (Sections 7.2, 8.2).
 
+**Rev 4 (2026-10-17).** Two fixes after the M1 benchmark run, marked **[Rev 4]**. Both are recorded as amendments in `PREREGISTRATION.md`.
+6. **Convergence threshold 1e-3 → 1e-4.** A population playing the heuristic has ε_det = 6.6e-4 at p_high = 0.5, so the old threshold would count it as converged. Equilibrium play has a Monte Carlo floor of about 1e-5 (Sections 8.6, 10).
+7. **H6a uses κ < 0.15 instead of "κ CI contains 0".** The exact heuristic has κ = 0.045 with a narrow CI that excludes 0 (Section 10, via `PREREGISTRATION.md`).
+
 **Rev 3 (2026-10-17).** One fix, marked **[Rev 3]**.
 5. **The atom is measured with a tolerance of τ = 1e-4, for every bidder.** A neural network won't output exactly r/v over a range of values, so with the old 1e-9 tolerance a continuous policy would score about 0 even if it bunched heavily. The near-atom share A (tolerance τ = 1e-4) is now the atom measure everywhere: for classification, hypotheses, tables and figures. It gives the same answer as the exact check for the discrete-grid, wrapper and benchmark bidders. The exact 1e-9 share is reported as a diagnostic column only (Sections 5.3, 7.2, 8.2).
 
@@ -252,7 +256,7 @@ The problem is a **one-step contextual bandit**, so PPO here reduces to clipped 
 ### 7.6 Pitfalls
 - **Non-stationarity in self-play:** monitor exploitability over time. If it oscillates, try a smaller learning rate, more auctions per update, or opponent snapshots (fictitious-play style: sample opponents from past policy checkpoints).
 - **Exploration noise blurs bunching:** always report both deterministic and stochastic evaluations.
-- **[Rev 2] Exploration noise inflates exploitability:** a random policy pays a utility cost for its own noise. With fixed entropy 0.01 (F7), that cost alone can keep ε above 1e-3 forever. This is why the convergence rule uses the deterministic profile (Section 8.6).
+- **[Rev 2] Exploration noise inflates exploitability:** a random policy pays a utility cost for its own noise. With fixed entropy 0.01 (F7), that cost alone can keep ε above the convergence threshold forever. This is why the convergence rule uses the deterministic profile (Section 8.6).
 - **Reward scale:** utilities are in [0, 1], so no reward normalization is needed beyond advantage normalization.
 
 ---
@@ -328,7 +332,7 @@ For a focal bidder against the *actual* opponent policies:
 - **Diagnostic ε (ε_stoch):** focal bidder and opponents play their stochastic policies. Report it next to ε_det in the dynamics figure. The gap ε_stoch − ε_det measures what exploration noise costs.
 - Fixed benchmark opponents (A0, A1) are deterministic in both cases.
 
-Convergence criterion: **ε_det** < 1e-3 and stable for 200 updates.
+Convergence criterion: **ε_det** < **1e-4** **[Rev 4]** and stable for 200 updates. (A heuristic population has ε_det ≈ 6.6e-4 at p_high = 0.5, so 1e-3 would not separate it from equilibrium.)
 
 ### 8.7 Economic outcomes
 - Publisher revenue per auction
@@ -369,7 +373,7 @@ Report everything relative to A0 and A1.
 | ID | Hypothesis | Supported if | Falsified if |
 |---|---|---|---|
 | **H0** | The test battery reproduces Section 5.3 for A0 and A1 | All values within Monte Carlo error | Any mismatch. Fix the code before proceeding |
-| **H1** | PPO's best response to fixed A0 opponents recovers b* | Sup distance < 0.02 (deterministic mode) and **ε_det** < 1e-3 **[Rev 2]** | Persistent gap. Tune PPO before proceeding |
+| **H1** | PPO's best response to fixed A0 opponents recovers b* | Sup distance < 0.02 (deterministic mode) and **ε_det** < **1e-4** **[Rev 2, Rev 4]** | Persistent gap. Tune PPO before proceeding |
 | **H2** | Full PPO in self-play (A3) converges to equilibrium-like play: atom share A → equilibrium level (≈ 0.012, below 0.05), κ ≈ 0.5, tail KS rejects | All three hold at convergence in ≥ 8/10 seeds | A persistent atom at r. **This would be a headline result**: learning does not remove bunching |
 | **H3** | A3 shows a *transient* bunching phase early in training that decays | Atom share rises then falls over updates | No transient, or bunching that never decays (then see H2) |
 | **H4** | A rare low-reserve condition (p_high = 0.95) slows A3's convergence and prolongs bunching | Time-to-convergence and area under the atom-share curve are larger at 0.95 than 0.5 | No difference |

@@ -10,7 +10,7 @@ Any later change must be committed as a dated amendment at the bottom of this fi
 
 | Item | Rule |
 |---|---|
-| Evaluation size | 10⁶ auctions per evaluation, policies frozen |
+| Evaluation size | 10⁶ auctions per evaluation, policies frozen. *(Storage of bids: see Amendment 3.)* |
 | Evaluation streams | Seed `100_000 + training_seed`. It is never used in training |
 | Test evaluation | **Balanced** reserve mix (50/50). Used for every statistical test and for classification: P(δ), A, A_exact, κ, KS, distances |
 | Economic evaluation | The run's own p_high. Used for revenue, surplus, unsold share, efficiency, tie frequency and ε |
@@ -54,7 +54,7 @@ The D > 0.02 effect-size floor stops the very large evaluation sample from count
 
 ## 4. Convergence and stopping
 
-- **Converged:** ε_det < 1e-3 at every dynamics evaluation over a window of 200 updates (5 consecutive evaluations).
+- **Converged:** ε_det < 1e-3 at every dynamics evaluation over a window of 200 updates (5 consecutive evaluations). *(Threshold superseded by Amendment 1.)*
 - Training stops at the first update where this holds, or at the update cap (default 2,000).
 - **Time to convergence** = the first update of that window. Runs that never converge are recorded as censored at the cap.
 
@@ -75,12 +75,12 @@ Seed-level statistics are summarized as the mean with a 95% t-interval across se
 | ID | Supported if (all conditions) | Otherwise |
 |---|---|---|
 | **H0** | Every Section 5.3 value for A0 and A1 is matched within max(3·MC standard error, 0.0015). Tail KS: D for A0 within 0.01 of 0.060 and rejecting; for A1, the subsample rejection rate ≤ 0.10. Revenue within 0.002 of 49/80 (A0) and 0.5885 (A1) | Falsified → fix code before M2 |
-| **H1** | For best response to fixed A0 (continuous and discrete, 5 seeds each), every seed has sup distance < 0.02 and ε_det < 1e-3 | Falsified → tune PPO before M3 |
+| **H1** | For best response to fixed A0 (continuous and discrete, 5 seeds each), every seed has sup distance < 0.02 and ε_det < 1e-3 *(threshold superseded by Amendment 1)* | Falsified → tune PPO before M3 |
 | **H2** | In ≥ 8/10 seeds of A3 (each p_high separately): A < 0.05 **and** κ > 0.3 **and** the tail KS rejects (Section 3 rule) | Falsified. If A > 0.05 in ≥ 3/10 seeds, report this as "persistent bunching" |
 | **H3** | For A3: the seed-mean A curve peaks at ≥ 0.05 at some dynamics evaluation **and** the final seed-mean A is < 0.5 × peak **and** < 0.05 | No transient (peak < 0.05), or no decay (see H2) |
 | **H4** | The p_high = 0.95 minus p_high = 0.5 difference in (i) time to convergence and (ii) area under the A curve (trapezoid, over update steps) both have a 95% bootstrap CI (10,000 resamples over seeds) above 0 | No difference |
 | **H5** | For A3-blind, in ≥ 8/10 seeds: P_low(0.01) ≥ 0.15 **and** P_high(0.01) ≥ 0.15 **and** P_high/P_low < 1.5 | The spike disappears (P_high/P_low ≥ 1.5 or P_low < 0.15) |
-| **H6a** | For A2-r0, in ≥ 8/10 seeds: b̃ distance < 0.02, \|A − 0.333\| < 0.03, the κ CI contains 0, and the revenue loss vs A0 is within 1 percentage point of −3.9% (r_high-only evaluation) | Falsified |
+| **H6a** | For A2-r0, in ≥ 8/10 seeds: b̃ distance < 0.02, \|A − 0.333\| < 0.03, the κ CI contains 0 *(superseded by Amendment 2)*, and the revenue loss vs A0 is within 1 percentage point of −3.9% (r_high-only evaluation) | Falsified |
 | **H6b** | For A2, in ≥ 8/10 seeds: A > 0.05, the κ CI contains 0 **or** κ < 0.15, and b̃ distance ≥ 0.02. Report the revenue gap to A1 (size and sign) | Falsified |
 | **H7** | Seed-mean A of A3-disc minus seed-mean A of A3 (same p_high) has a 95% bootstrap CI above 0 | No difference |
 | **H8 (discrete)** | Best response to fixed A1: at r_H, for v ∈ [0.53, 0.66], the modal deterministic bid is r_H + 0.01 in ≥ 4/5 seeds | Modal bid elsewhere |
@@ -101,4 +101,26 @@ PPO hyperparameter tuning (spec Section 7.5) happens only in M2, on the H1/H8 sa
 
 ## Amendments
 
-_None yet._
+### Amendment 1 (2026-10-17): convergence threshold 1e-3 → 1e-4
+
+**Changes:** Section 4 (convergence) and H1 use ε_det < **1e-4** instead of 1e-3.
+
+**Reason:** the M1 benchmark run (`results/m1_benchmarks`, commit c743be6) showed that a population playing the heuristic has ε_det = 6.6e-4 at p_high = 0.5. That matches a hand calculation: at r_high, a bidder with v ∈ (r_high, 2/3) gains by bidding just above r. At p_high = 0.95 it is about 1.24e-3. The old threshold would therefore count a heuristic population as converged at p_high = 0.5. Equilibrium play has a Monte Carlo floor of about 1.1e-5. A threshold of 1e-4 sits 9× above that floor and about 6.6× below the heuristic.
+
+**Timing:** made after M1 and before any learned bidder was trained.
+
+### Amendment 2 (2026-10-17): H6a κ criterion
+
+**Changes:** in H6a, "the κ CI contains 0" becomes **κ < 0.15**, the rule H6b already uses.
+
+**Reason:** the exact heuristic itself has κ = 0.045, 95% CI [0.044, 0.045], at 10⁶ auctions (M1). The smooth part of its bid distribution above the atom makes P_high(δ) rise slightly with δ. Requiring the CI to contain 0 would reject the benchmark that H6a is meant to recognize. Equilibrium has κ = 0.536, so 0.15 separates the two clearly.
+
+**Timing:** made after M1 and before any learned bidder was trained.
+
+### Amendment 3 (2026-10-17): stored evaluation bids
+
+**Changes:** learned runs store a **2×10⁵-auction sample** of the final evaluation in `eval.parquet`. All metrics are still computed on the full 10⁶-auction evaluation, which is reproducible from the checkpoint and the evaluation seed.
+
+**Reason:** a full 10⁶-auction evaluation takes about 95 MB as Parquet, or about 4 GB across the primary grid. This changes storage only; no metric or decision rule changes.
+
+**Timing:** made after M1 and before any learned bidder was trained.
