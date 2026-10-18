@@ -13,6 +13,11 @@ Suggested repo name: `reserve-bunching-rl`
 3. **Exploitability uses the deterministic policy.** With a random policy, exploration noise alone can keep ε above 1e-3, especially with fixed entropy (F7). The convergence rule and H1 now use ε of the deterministic profile. Stochastic ε is reported only as a diagnostic (Sections 7.6, 8.6, 10).
 4. **Deterministic mode has one definition: the Beta mean.** The mean and the mode give different bid functions. The mean is used for all classification. The mode is reported as a secondary diagnostic only (Sections 7.2, 8.2).
 
+**Rev 5 (2026-10-18).** After M2, recorded as Amendments 4–5 in `PREREGISTRATION.md`.
+8. **Discrete-grid bidders are classified against grid-rounded benchmarks.** κ is degenerate on a 1-cent grid. The rounded equilibrium has an atom A = 0.087 by itself, because b* is flat at r. The cutoff is A = 0.2, between rounded equilibrium (0.087) and rounded heuristic (0.347).
+9. **H7 also requires the discrete atom to exceed the rounded-equilibrium atom (0.087).**
+10. **PPO settings for M3 are frozen** (5,000 updates, lr held for 50% then decayed to 10%). See `PREREGISTRATION.md`.
+
 **Rev 4 (2026-10-17).** Two fixes after the M1 benchmark run, marked **[Rev 4]**. Both are recorded as amendments in `PREREGISTRATION.md`.
 6. **Convergence threshold 1e-3 → 1e-4.** A population playing the heuristic has ε_det = 6.6e-4 at p_high = 0.5, so the old threshold would count it as converged. Equilibrium play has a Monte Carlo floor of about 1e-5 (Sections 8.6, 10).
 7. **H6a uses κ < 0.15 instead of "κ CI contains 0".** The exact heuristic has κ = 0.045 with a narrow CI that excludes 0 (Section 10, via `PREREGISTRATION.md`).

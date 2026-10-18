@@ -48,6 +48,8 @@ Applied per seed, on the balanced deterministic evaluation at convergence. Let L
 
 - **Heuristic-like:** L²(A1) + 0.01 ≤ L²(A0) **and** A > 0.05.
 - **Equilibrium-like:** L²(A0) + 0.01 ≤ L²(A1) **and** κ > 0.3 **and** the tail KS rejects (full-sample p < 0.05 **and** D > 0.02).
+
+*(For discrete-grid bidders, these rules are superseded by Amendment 4.)*
 - **Neither:** anything else.
 
 The D > 0.02 effect-size floor stops the very large evaluation sample from counting trivial differences as rejections. The equilibrium benchmark has D ≈ 0.06.
@@ -82,7 +84,7 @@ Seed-level statistics are summarized as the mean with a 95% t-interval across se
 | **H5** | For A3-blind, in ≥ 8/10 seeds: P_low(0.01) ≥ 0.15 **and** P_high(0.01) ≥ 0.15 **and** P_high/P_low < 1.5 | The spike disappears (P_high/P_low ≥ 1.5 or P_low < 0.15) |
 | **H6a** | For A2-r0, in ≥ 8/10 seeds: b̃ distance < 0.02, \|A − 0.333\| < 0.03, the κ CI contains 0 *(superseded by Amendment 2)*, and the revenue loss vs A0 is within 1 percentage point of −3.9% (r_high-only evaluation) | Falsified |
 | **H6b** | For A2, in ≥ 8/10 seeds: A > 0.05, the κ CI contains 0 **or** κ < 0.15, and b̃ distance ≥ 0.02. Report the revenue gap to A1 (size and sign) | Falsified |
-| **H7** | Seed-mean A of A3-disc minus seed-mean A of A3 (same p_high) has a 95% bootstrap CI above 0 | No difference |
+| **H7** | Seed-mean A of A3-disc minus seed-mean A of A3 (same p_high) has a 95% bootstrap CI above 0 *(superseded by Amendment 5)* | No difference |
 | **H8 (discrete)** | Best response to fixed A1: at r_H, for v ∈ [0.53, 0.66], the modal deterministic bid is r_H + 0.01 in ≥ 4/5 seeds | Modal bid elsewhere |
 | **H8 (continuous)** | Descriptive only: report A, A_exact and the offset. A continuous bidder can't land on r_H + 0.01, so this version is not tested | — |
 | **H9** | Seed-mean A of A5 < 0.05, in each p_high | A ≥ 0.05 |
@@ -124,3 +126,47 @@ PPO hyperparameter tuning (spec Section 7.5) happens only in M2, on the H1/H8 sa
 **Reason:** a full 10⁶-auction evaluation takes about 95 MB as Parquet, or about 4 GB across the primary grid. This changes storage only; no metric or decision rule changes.
 
 **Timing:** made after M1 and before any learned bidder was trained.
+
+### Amendment 4 (2026-10-18): classification of discrete-grid bidders
+
+**Changes:** for bidders on the 1-cent grid (A3-disc and any other categorical policy):
+- **Heuristic-like:** L²(A1) + 0.01 ≤ L²(A0) **and** A > 0.2.
+- **Equilibrium-like:** L²(A0) + 0.01 ≤ L²(A1) **and** A < 0.2 **and** the tail KS rejects (p < 0.05 **and** D > 0.02). No κ condition.
+- **Neither:** anything else.
+
+**Reason:**
+- On a 1-cent grid, P_high(δ) for δ < 0.01 counts only bids exactly at r_high, so κ is not a measure of bin-width scaling. It was 0 in every untuned M2 discrete run.
+- Rounding the benchmarks to the grid (10⁶ auctions, seed 12345) gives atom shares of A = 0.087 for equilibrium and 0.347 for the heuristic. The equilibrium bid is flat at the reserve: b* < r + 0.005 for v < r + 0.041, so all those values round to exactly r. The rounded equilibrium also has κ = 0.32, at the old 0.3 cutoff.
+- A cutoff of 0.2 lies between the two grid benchmarks.
+
+**Timing:** made after the M2 sanity runs (best response to fixed A0 and A1 opponents) and before any M3 self-play run.
+
+### Amendment 5 (2026-10-18): H7 relative to grid rounding
+
+**Changes:** H7 is supported only if **both** hold:
+- (i) seed-mean A of A3-disc minus seed-mean A of A3 (same p_high) has a 95% bootstrap CI above 0; **and**
+- (ii) seed-mean A of A3-disc has a 95% t-interval above 0.087, the atom of the equilibrium rounded to the grid.
+
+**Reason:** by Amendment 4's calculation, a discrete bidder playing the rounded equilibrium already has A ≈ 0.087. The original H7 would count that mechanical rounding atom as "raising the atom share".
+
+**Timing:** as Amendment 4.
+
+### Frozen PPO settings for M3 (2026-10-18; Section 8)
+
+Chosen on the M2 tuning runs (`results/tune_*`, seeds 100–101, which are not used for any hypothesis test):
+- **updates:** 5,000
+- **lr:** 3e-4, held for the first 50% of training, then decayed linearly to 10% of its starting value
+- **entropy coefficient:** 0.01, annealed linearly to 0 over training
+- **unchanged from SPEC 7.5:** auctions per update (8,192), epochs, minibatch, clip, value coefficient, gradient clip, network
+
+Under self-play with shared parameters, each update has 4 × 8,192 = 32,768 samples. That equals the per-update data of the best tuning variant (T2), which had 32,768 auctions with one learner.
+
+### M2 outcome record (2026-10-18)
+
+- **H1 (pre-registered strict rule): not supported.**
+  - **Exploitability passes for the continuous learner after tuning:** ε_det of 5.5e-5 and 5.6e-5 (T2, tuning seeds).
+  - **The sup distance fails by construction.** At r_low, the policy at v = r is still Beta(1, 1): no bid there can win, so the only learning signal is the entropy bonus. Its deterministic bid is 0.05, against b* = 0.1.
+  - **The discrete learner does not reach ε_det < 1e-4.** Its best was 1.13e-4. The 1-cent rounding floor is 2.4e-5.
+  - **Decision:** proceed to M3 and report this. The H1 rule is not amended.
+- **H8 (discrete): supported**, 5/5 seeds (`results/m2_br_a1_disc_*`).
+

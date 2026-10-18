@@ -142,7 +142,8 @@ class Trainer:
                 n_auctions=ev["final_auctions" if final else "dyn_auctions"],
                 eps_focal=self.eval_pop[0], eps_opponents=self.eval_pop[1:],
                 eps_draws=ev["final_eps_draws" if final else "dyn_eps_draws"],
-                bid_columns=self.learner_slots, n_boot=1000 if final else 100, n_sub=200 if final else 20)
+                bid_columns=self.learner_slots, n_boot=1000 if final else 100, n_sub=200 if final else 20,
+                discrete=self.lc["action"] == "categorical")
         return m, sim
 
     def summarize(self, update: int, m: dict, eps_stoch: float | None) -> dict:

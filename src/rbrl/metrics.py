@@ -188,10 +188,23 @@ def economic_outcomes(values, r, result, r_levels=None):
     return out
 
 
-def classify(L2_A0, L2_A1, atom, kappa, ks_D, ks_p, margin=0.01):
-    """PREREGISTRATION Section 3."""
+# Discrete-grid bidders (PREREGISTRATION Amendment 4): the equilibrium rounded to the
+# 1-cent grid already has A = 0.087 and kappa = 0.32, so they use an atom cutoff between
+# the grid-rounded equilibrium (0.087) and heuristic (0.347), and no kappa condition.
+DISCRETE_ATOM_CUTOFF = 0.2
+
+
+def classify(L2_A0, L2_A1, atom, kappa, ks_D, ks_p, margin=0.01, discrete=False):
+    """PREREGISTRATION Section 3 (continuous) and Amendment 4 (discrete grid)."""
+    ks_rejects = ks_p < 0.05 and ks_D > 0.02
+    if discrete:
+        if L2_A1 + margin <= L2_A0 and atom > DISCRETE_ATOM_CUTOFF:
+            return "heuristic-like"
+        if L2_A0 + margin <= L2_A1 and atom < DISCRETE_ATOM_CUTOFF and ks_rejects:
+            return "equilibrium-like"
+        return "neither"
     if L2_A1 + margin <= L2_A0 and atom > 0.05:
         return "heuristic-like"
-    if L2_A0 + margin <= L2_A1 and kappa > 0.3 and ks_p < 0.05 and ks_D > 0.02:
+    if L2_A0 + margin <= L2_A1 and kappa > 0.3 and ks_rejects:
         return "equilibrium-like"
     return "neither"

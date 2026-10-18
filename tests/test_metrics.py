@@ -81,3 +81,12 @@ def test_equilibrium_is_not_exploitable_but_heuristic_is():
     # win prob (2/3)^3 instead of the tie-weighted 0.2025, so eps_rhigh ~ 0.0013.
     assert e1["per_reserve"]["r0.5"]["eps"] == pytest.approx(0.0013, abs=1e-4)
     assert e1["eps"] == pytest.approx(0.00065, abs=7e-5)
+
+
+def test_discrete_classification_uses_grid_atom_cutoff():
+    # A rounded-equilibrium bidder: atom 0.087, kappa 0.32, KS rejects.
+    assert metrics.classify(0.005, 0.025, 0.087, 0.32, 0.05, 1e-10, discrete=True) == "equilibrium-like"
+    # kappa just under 0.3: the continuous rule says "neither", the discrete rule ignores kappa.
+    assert metrics.classify(0.005, 0.025, 0.087, 0.25, 0.05, 1e-10) == "neither"
+    assert metrics.classify(0.005, 0.025, 0.087, 0.25, 0.05, 1e-10, discrete=True) == "equilibrium-like"
+    assert metrics.classify(0.025, 0.005, 0.347, 0.05, 0.001, 0.6, discrete=True) == "heuristic-like"

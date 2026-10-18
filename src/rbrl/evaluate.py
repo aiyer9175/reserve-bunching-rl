@@ -77,7 +77,7 @@ def bid_metrics(sim: dict, reserves: ReserveSchedule, rng, n_boot=1000, n_match=
 def evaluate_population(population, env: AuctionEnv, ref_fns: dict, *, n_auctions=1_000_000,
                         seed=100_000, mode="deterministic", eps_focal=None, eps_opponents=None,
                         n_match=None, eps_draws=200_000, bid_columns=None, n_boot=1000,
-                        n_sub=200, eval_reserves: ReserveSchedule | None = None):
+                        n_sub=200, eval_reserves: ReserveSchedule | None = None, discrete=False):
     """Full SPEC Section 8 battery for one population.
 
     Bid metrics use a balanced (50/50) evaluation; economic outcomes and
@@ -111,5 +111,5 @@ def evaluate_population(population, env: AuctionEnv, ref_fns: dict, *, n_auction
     if "A0" in out["distance"] and "A1" in out["distance"]:
         out["classification"] = metrics.classify(
             out["distance"]["A0"]["L2"], out["distance"]["A1"]["L2"], bm["atom"],
-            bm["kappa"]["kappa"], bm["tail_ks"]["D"], bm["tail_ks"]["p"])
+            bm["kappa"]["kappa"], bm["tail_ks"]["D"], bm["tail_ks"]["p"], discrete=discrete)
     return out, sim_bal
