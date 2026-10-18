@@ -1,0 +1,31 @@
+run_id: tune_t1_br_a0_disc
+n_bidders: 4
+value_dist:
+  kind: uniform
+reserves:
+  r_low: 0.1
+  r_high: 0.5
+  p_high: 0.5
+  mode: mixed
+population:
+- learner
+- A0
+- A0
+- A0
+learner:
+  kind: A3-disc
+  obs: full
+  action: categorical
+  mask_above_value: false
+  wrapper: none
+  init: truthful
+ppo:
+  updates: 5000
+  lr_hold_frac: 0.5
+  lr_final_frac: 0.1
+eval:
+  every: 100
+  early_stop: false
+seed: 100
+config_path: configs/tuning/t1_br_a0_disc.yaml
+git_commit: 2626d1f621cd1d20b32a4949834a57b307a9c6f8
