@@ -1,0 +1,28 @@
+run_id: m2_br_a0_beta
+n_bidders: 4
+value_dist:
+  kind: uniform
+reserves:
+  r_low: 0.1
+  r_high: 0.5
+  p_high: 0.5
+  mode: mixed
+population:
+- learner
+- A0
+- A0
+- A0
+learner:
+  kind: A3
+  obs: full
+  action: beta
+  mask_above_value: false
+  wrapper: none
+  init: truthful
+ppo:
+  updates: 2000
+eval:
+  early_stop: true
+seed: 1
+config_path: configs/m2_br_a0_beta.yaml
+git_commit: 17355210bc96eadcdababa584354e1f024563093
