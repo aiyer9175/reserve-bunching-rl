@@ -77,3 +77,11 @@ def test_shared_self_play_collects_one_sample_per_learner_slot():
     t = Trainer(_cfg(population=["learner"] * 4), seed=0)
     obs, act, logp, rew = t.collect()
     assert len(rew) == 4 * 1024 and obs.shape == (4 * 1024, 3)
+
+
+def test_lr_schedule():
+    from rbrl.train import lr_factor
+    assert lr_factor(0.0, 0.0, 0.0) == 1.0 and lr_factor(1.0, 0.0, 0.0) == 0.0  # SPEC default
+    assert lr_factor(0.3, 0.5, 0.1) == 1.0
+    assert abs(lr_factor(0.75, 0.5, 0.1) - 0.55) < 1e-12
+    assert abs(lr_factor(1.0, 0.5, 0.1) - 0.1) < 1e-12

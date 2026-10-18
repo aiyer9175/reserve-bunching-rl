@@ -23,7 +23,18 @@ from .runlog import load_config, run_dir, save_run
 PPO_DEFAULTS = dict(
     auctions_per_update=8192, epochs=4, minibatch=1024, clip=0.2, lr=3e-4, lr_decay="linear",
     ent_coef=0.01, ent_schedule="anneal", vf_coef=0.5, max_grad_norm=0.5, updates=2000, hidden=64,
+    # Schedule shape. Defaults reproduce SPEC 7.5: linear decay of lr and entropy to 0 over training.
+    lr_hold_frac=0.0,    # fraction of training at full lr before the linear decay starts
+    lr_final_frac=0.0,   # lr at the end, as a fraction of the initial lr
+    ent_anneal_frac=1.0, # entropy coefficient reaches 0 at this fraction of training
 )
+
+
+def lr_factor(frac_done: float, hold: float, final: float) -> float:
+    if frac_done <= hold:
+        return 1.0
+    t = (frac_done - hold) / max(1.0 - hold, 1e-12)
+    return 1.0 - (1.0 - final) * t
 EVAL_DEFAULTS = dict(
     every=50, dyn_auctions=200_000, dyn_eps_draws=100_000, final_auctions=1_000_000,
     final_eps_draws=200_000, save_auctions=200_000, converge_eps=1e-4, converge_window=5,
@@ -91,10 +102,12 @@ class Trainer:
     def update(self, batch, frac_done: float):
         obs, act, logp_old, rew = batch
         p = self.ppo
-        lr = p["lr"] * (1 - frac_done if p["lr_decay"] == "linear" else 1.0)
+        lr = p["lr"] * (lr_factor(frac_done, p["lr_hold_frac"], p["lr_final_frac"])
+                        if p["lr_decay"] == "linear" else 1.0)
         for g in self.opt.param_groups:
             g["lr"] = lr
-        ent_coef = p["ent_coef"] * (1 - frac_done if p["ent_schedule"] == "anneal" else 1.0)
+        ent_coef = p["ent_coef"] * (max(0.0, 1 - frac_done / p["ent_anneal_frac"])
+                                    if p["ent_schedule"] == "anneal" else 1.0)
         with torch.no_grad():
             adv_all = rew - self.policy.value(obs)
         n = len(rew)
