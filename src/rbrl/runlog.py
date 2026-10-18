@@ -15,7 +15,7 @@ def git_commit() -> str:
     try:
         sha = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True,
                                       stderr=subprocess.DEVNULL).strip()
-        dirty = subprocess.check_output(["git", "status", "--porcelain"], cwd=ROOT, text=True).strip()
+        dirty = subprocess.check_output(["git", "status", "--porcelain", "--untracked-files=no"], cwd=ROOT, text=True).strip()
         return sha + ("-dirty" if dirty else "")
     except (subprocess.CalledProcessError, FileNotFoundError):
         return "unknown"
