@@ -1,0 +1,14 @@
+run_id: m1_benchmarks
+n_bidders: 4
+value_dist:
+  kind: uniform
+reserves:
+  r_low: 0.1
+  r_high: 0.5
+  p_high: 0.5
+n_auctions: 1000000
+eval_seed: 12345
+ks_match_n: 65000
+eps_draws: 200000
+save_bids: true
+git_commit: unknown

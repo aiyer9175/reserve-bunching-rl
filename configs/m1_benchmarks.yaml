@@ -1,0 +1,11 @@
+# M1 acceptance: reproduce SPEC Section 5.3 for A0 and A1 (hypothesis H0),
+# plus the second-price truthful control.
+run_id: m1_benchmarks
+n_bidders: 4
+value_dist: {kind: uniform}
+reserves: {r_low: 0.10, r_high: 0.50, p_high: 0.5}
+n_auctions: 1000000      # balanced evaluation; 4M bids per population
+eval_seed: 12345
+ks_match_n: 65000        # SPEC 5.3 quotes the tail KS at n ~ 65k per group
+eps_draws: 200000
+save_bids: true
