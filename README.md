@@ -54,7 +54,7 @@ uv pip install --python .venv/bin/python -e ".[dev,rl]"     # M2+: adds torch fo
 .venv/bin/python -m rbrl.train configs/m2_br_a0_beta.yaml --seed 0 [--updates N] [--threads 1]
 
 # Sweep: configs × seeds in parallel, one process per run
-.venv/bin/python -m rbrl.sweep configs/m2_*.yaml --seeds 0-4 --jobs 8
+.venv/bin/python -m rbrl.sweep configs/m2_*.yaml --seeds 0-4 --jobs 4
 
 # Per-seed tables and pre-registered decision rules
 .venv/bin/python -m rbrl.summarize m2
@@ -72,11 +72,11 @@ M3 is 90 PPO runs, so run it on a many-core machine inside `tmux` so it survives
 
 ```bash
 tmux new -s m3
-.venv/bin/python -m rbrl.sweep configs/m3_*.yaml --seeds 0-9 --jobs <n_cores>
+.venv/bin/python -m rbrl.sweep configs/m3_*.yaml --seeds 0-9 --jobs 4
 # detach: Ctrl-b d    reattach: tmux attach -t m3
 ```
 
-Set `--jobs` to about the number of physical cores. Each run uses one torch thread.
+`--jobs` defaults to 4. On a shared machine, agree the worker count with the machine's owner before raising it; on your own machine, set it to about the number of physical cores. Each run uses one torch thread.
 
 ## Layout
 
