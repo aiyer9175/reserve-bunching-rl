@@ -1,0 +1,9 @@
+# M3 primary grid (SPEC 9), p_high = 0.95. H2-H4: full PPO in shared self-play.
+run_id: m3_a3_p95
+n_bidders: 4
+value_dist: {kind: uniform}
+population: [learner, learner, learner, learner]
+reserves: {r_low: 0.10, r_high: 0.50, p_high: 0.95, mode: mixed}
+learner: {kind: A3, obs: full, action: beta, mask_above_value: false, wrapper: none, init: truthful}
+ppo: {updates: 5000, lr_hold_frac: 0.5, lr_final_frac: 0.1}  # frozen M3 settings; 8,192 auctions/update (default)
+eval: {every: 50, early_stop: true}

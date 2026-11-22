@@ -19,7 +19,7 @@ Any later change must be committed as a dated amendment at the bottom of this fi
 | Deterministic mode (Beta) | x = Beta mean α/(α+β), bid = x·v. The Beta mode (α−1)/(α+β−2) is a diagnostic column only |
 | Deterministic mode (categorical) | arg-max grid point; ties go to the lower bid |
 | "At convergence" | The final evaluation of the run: at early stop (Section 4) or at the update cap, whichever comes first |
-| Dynamics | A full metric evaluation every 50 updates, with 2×10⁵ auctions (smaller than the final evaluation, for speed) |
+| Dynamics | A full metric evaluation every 50 updates, with 2×10⁵ auctions (smaller than the final evaluation, for speed). *(Draws for ε_det: see Amendment 6.)* |
 
 ## 2. Metric definitions
 
@@ -170,3 +170,19 @@ Under self-play with shared parameters, each update has 4 × 8,192 = 32,768 samp
   - **Decision:** proceed to M3 and report this. The H1 rule is not amended.
 - **H8 (discrete): supported**, 5/5 seeds (`results/m2_br_a1_disc_*`).
 
+### Amendment 6 (2026-11-21): ε draws in dynamics evaluations
+
+**Changes:** the dynamics evaluations every 50 updates, which the convergence rule (Section 4) uses, estimate H_r from **1×10⁵** Monte Carlo draws per r, not the 2×10⁵ of the ε_det definition in Section 2. Dynamics ε_stoch uses 5×10⁴ draws per r. The final evaluation is unchanged: ε_det and ε_stoch both use 2×10⁵ draws per r.
+
+**Reason:** this is what the code (`dyn_eps_draws` in `rbrl/train.py`) did in every M2 and tuning run. Section 1 lowered the dynamics auction count for speed but did not state the ε draws. Recording it keeps M3 consistent with M2. The threshold still separates the benchmarks at 1×10⁵ draws (5 repeats each, evaluation seeds 0–4):
+
+| Population | p_high | ε_det, 1×10⁵ draws (mean / max) | ε_det, 2×10⁵ draws (mean / max) |
+|---|---|---|---|
+| A0 | 0.5 | 1.92e-5 / 1.98e-5 | 1.14e-5 / 1.22e-5 |
+| A0 | 0.95 | 1.37e-5 / 1.71e-5 | 8.71e-6 / 9.10e-6 |
+| A1 | 0.5 | 6.63e-4 / 6.68e-4 | 6.57e-4 / 6.60e-4 |
+| A1 | 0.95 | 1.24e-3 / 1.25e-3 | 1.23e-3 / 1.24e-3 |
+
+The equilibrium's Monte Carlo floor rises from about 1.1e-5 to about 2e-5, still 5× below the 1e-4 threshold. The heuristic is unchanged, about 6.6× above it.
+
+**Timing:** made after M2 and before any M3 run.
